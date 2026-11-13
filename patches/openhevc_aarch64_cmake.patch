@@ -1,0 +1,44 @@
+OpenHEVC: add aarch64 platform so we use generic C + aarch64 timer instead of x86 asm.
+Apply from openHEVC repo root: patch -p1 < patches/openhevc_aarch64_cmake.patch
+Requires platform/aarch64/config.h and libavutil/aarch64/timer.h (created by install_openhevc.sh on aarch64).
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -56,6 +56,8 @@
+ 
+ if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7l")
+   configure_file(platform/arm/config.h ${PROJECT_SOURCE_DIR}/config.h)
++elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64")
++  configure_file(platform/aarch64/config.h ${PROJECT_SOURCE_DIR}/config.h)
+ else()
+   configure_file(platform/x86/config.h.in ${PROJECT_SOURCE_DIR}/config.h)
+   configure_file(platform/x86/config.asm.in ${PROJECT_SOURCE_DIR}/config.asm)
+@@ -78,7 +80,7 @@ endif()
+ endif()
+ 
+ #define asm sources
+-if(NOT ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7l") )
++if(NOT ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7l") AND NOT ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64"))
+ if(YASM_FOUND)
+ set(YASM_NAMES
+     libavutil/x86/cpuid.asm
+@@ -115,9 +117,9 @@ set(YASM_NAMES
+ #libavcodec/x86/me_cmp.asm
+ #libavcodec/x86/xvididct.asm
+ )
+ endif(YASM_FOUND)
+-endif(NOT ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7l") )
++endif(NOT ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7l") AND NOT ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64"))
+ 
+-if(NOT ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7l") )
++if(NOT ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7l") AND NOT ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64"))
+ set(COMMON_YASM_ARGS
+     -I./
+     -I "${CMAKE_CURRENT_SOURCE_DIR}"
+@@ -129,7 +131,7 @@ if(CMAKE_BUILD_TYPE MATCHES "[Dd][Ee][Bb][Uu][Gg]")
+ set(COMMON_YASM_ARGS "${COMMON_YASM_ARGS} -g dwarf2")
+ endif(CMAKE_BUILD_TYPE MATCHES "[Dd][Ee][Bb][Uu][Gg]")
+-endif(NOT ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7l") )
++endif(NOT ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7l") AND NOT ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64"))
+ 
+ if(YASM_FOUND)
+ if(APPLE)

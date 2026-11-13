@@ -1,0 +1,16 @@
+OpenHEVC ffmpeg_update: LibOpenHevcWrapper is built without libopenhevc/openhevc.c,
+so oh_init/oh_close/oh_decode etc. are undefined and gst-openhevc fails at link time.
+Append openhevc.c to libfilenames before add_library.
+Apply from openHEVC repo root: patch -p1 < patches/openhevc_cmake_append_openhevc_c.patch
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -554,6 +554,9 @@ endif()
+ else()
+     option (BUILD_SHARED_LIBS "enabled static library instead of shared" ON)
+ endif()
++# gst-openhevc uses oh_* API from libopenhevc/openhevc.c; upstream omits it from LibOpenHevcWrapper
++list(APPEND libfilenames libopenhevc/openhevc.c)
++
+ add_library (LibOpenHevcWrapper ${libfilenames} ${YASM_OBJECTS})
+ 
+ 

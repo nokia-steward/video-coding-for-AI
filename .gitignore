@@ -1,0 +1,74 @@
+# Build and Output Directories
+build/
+cmake-build-debug*/
+test_build/
+test/test_output/
+Testing/
+.cache
+*build_boost*
+output/
+# Exception: Don't ignore the pipeline output branch implementations
+!rtp_server/src/pipeline/output/
+*.sif
+tmp
+temp
+
+# IDE and Editor Files
+.idea/
+.vscode/
+
+# Python Environment
+.venv/
+.env/
+# Legacy local env folders kept ignored to avoid accidental commits after cutover.
+ds_export_env/
+.cache/
+__pycache__
+
+# Video and Media Files
+*.mp4
+*.h265
+**/*.yuv
+*.onnx
+videos/
+
+# Model and Configuration Files
+peoplenet/
+/yolo/
+# YOLO config files (both old and model-specific)
+encoder_cli/yolo_infer_config.txt
+encoder_cli/yolo_config.yml
+/yolo/yolo_infer_config*.txt
+/yolo/yolo_infer_config*.yml
+/yolo/yolo_config*.yml
+encoder_cli/peoplenet_config.yml
+encoder_cli/peoplenet_pgie_config.yml
+
+# Output and Log Files
+reports/
+/**/*_output.txt
+encoder_cli/*_frames*
+encoder_cli/tracker_dump/
+rtp_server/debug_frames/
+
+# Static Analysis Results
+static_analysis_results/
+
+# External Libraries and Dependencies (repo root only; do not ignore scripts/**/lib/)
+/lib/
+# Symlink-only dir created by encoder_cli setup for kvazaarenc (do not commit)
+lib/install/gst-plugins-kvazaar-only/
+lib/tensorrt-headers/
+
+# Documentation and Test Data
+manual/
+runs/
+deepstream-test1/
+aidoc/
+
+# Test Output Files
+test_detail.json
+test_results.xml
+*.test_detail.json
+test/test_data/
+

@@ -1,0 +1,79 @@
+# Multi-stage build for RTP Server
+# Stage 1: Builder - contains build tools and source code
+FROM vcai-base:latest AS builder
+
+WORKDIR /opt/vcai
+
+# Copy project files
+COPY . .
+
+# Set up host-equivalent dependencies used by build scripts
+RUN scripts/setup/bootstrap.sh core
+
+# Build RTP server
+RUN cd rtp_server && ./build.sh
+
+# Stage 2: Runtime - minimal image with only runtime artifacts
+FROM nvcr.io/nvidia/deepstream:7.1-gc-triton-devel AS runtime
+
+RUN apt-get update && \
+    apt-get install --reinstall -y \
+        libde265-0 \
+        libavcodec58 \
+        libavutil56 \
+        libgtkmm-3.0-1v5 \
+        libopencv-dev \
+        libopenh264-6 \
+        libmpg123-0 \
+        libx265-199 \
+        libx264-163 \
+        libvpx7 \
+        libxvidcore4 \
+    && \
+    apt-get install -y --no-install-recommends \
+        libavformat58 \
+        libavfilter7 \
+        libavdevice58 \
+        libswscale5 \
+        libopencv-contrib-dev \
+        libgraphene-1.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/vcai
+
+# Copy compiled RTP server binary and shared library
+COPY --from=builder /opt/vcai/build/rtp_server /opt/vcai/build/rtp_server
+
+# Copy rtp_server runtime scripts and default config
+COPY --from=builder /opt/vcai/rtp_server/run.sh /opt/vcai/rtp_server/run.sh
+COPY --from=builder /opt/vcai/rtp_server/scripts/ /opt/vcai/rtp_server/scripts/
+COPY --from=builder /opt/vcai/rtp_server/rtp_server_config.ini /opt/vcai/rtp_server/rtp_server_config.ini
+RUN chmod +x /opt/vcai/rtp_server/run.sh && \
+    chmod +x /opt/vcai/rtp_server/scripts/*.sh
+
+# Modify common_rtp_server_setup.sh to work in Docker runtime:
+# - skip build (already compiled in builder stage)
+# - use absolute binary path
+# - write logs into mounted /opt/vcai/data/rtp_server directory
+RUN sed -i 's|^        ./build.sh|        : # Build skipped in Docker (already built)|' /opt/vcai/rtp_server/scripts/common_rtp_server_setup.sh && \
+    sed -i 's|../build/rtp_server/rtp_server/rtp_server|/opt/vcai/build/rtp_server/rtp_server/rtp_server|g' /opt/vcai/rtp_server/scripts/common_rtp_server_setup.sh && \
+    sed -i 's|rm -f rtp_server_output.txt|rm -f /opt/vcai/data/rtp_server/rtp_server_output.txt|g' /opt/vcai/rtp_server/scripts/common_rtp_server_setup.sh && \
+    sed -i 's|tee rtp_server_output.txt|tee /opt/vcai/data/rtp_server/rtp_server_output.txt|g' /opt/vcai/rtp_server/scripts/common_rtp_server_setup.sh
+
+# Create data directory structure
+RUN mkdir -p /opt/vcai/data/rtp_server
+
+# Set environment variables
+ENV VCAI_DATA_DIR=/opt/vcai/data
+ENV WORKING_DIR=/opt/vcai
+ENV PATH="/opt/vcai/build/rtp_server/rtp_server:${PATH}"
+
+# Set up GStreamer environment
+# Include project and system library paths
+# System paths are needed for runtime dependencies (libavcodec, libde265, etc.)
+# Local paths are needed for GStreamer plugins and project-built libraries
+ENV LD_LIBRARY_PATH="/opt/vcai/build/rtp_server/rtp_server:/usr/lib/x86_64-linux-gnu:/usr/lib:/lib/x86_64-linux-gnu:/lib:${LD_LIBRARY_PATH}"
+
+# Default command - use run.sh script (run from rtp_server directory)
+WORKDIR /opt/vcai/rtp_server
+CMD ["/opt/vcai/rtp_server/run.sh"]

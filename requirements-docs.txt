@@ -1,0 +1,4 @@
+# VCAI HTML manual — pinned for reproducible builds
+# Theme: readthedocs (built-in). mkdocs-material removed to avoid sidebar/tab issues.
+mkdocs>=1.5.0
+pymdown-extensions>=10.0

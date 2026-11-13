@@ -1,0 +1,17 @@
+/*
+ * ReadTheDocs theme defaults .wy-nav-content to max-width: 800px, which leaves
+ * a large empty band on wide screens. Use the remaining space for tables/code.
+ */
+.wy-nav-content {
+  max-width: none;
+  margin: 0;
+}
+
+/* Optional: slightly reduce horizontal padding on very wide viewports so
+ * content starts closer to the sidebar without touching edge-to-edge. */
+@media screen and (min-width: 1400px) {
+  .wy-nav-content {
+    padding-left: 2em;
+    padding-right: 2em;
+  }
+}

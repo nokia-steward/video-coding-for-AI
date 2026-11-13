@@ -1,0 +1,15 @@
+OpenHEVC libavutil/cpu.c: glibc 2.32+ removed sys/sysctl.h on Linux.
+Linux uses HAVE_SCHED_GETAFFINITY in av_cpu_count(); skip sysctl include.
+Apply from openHEVC repo root: patch -p1 < patches/openhevc_libavutil_cpu_sysctl.patch
+--- a/libavutil/cpu.c
++++ b/libavutil/cpu.c
+@@ -34,7 +34,8 @@
+ #if HAVE_GETPROCESSAFFINITYMASK || HAVE_WINRT
+ #include <windows.h>
+ #endif
+-#if HAVE_SYSCTL
++/* Linux: sysctl.h removed from glibc; cpu count uses sched_getaffinity above */
++#if HAVE_SYSCTL && !defined(__linux__)
+ #if HAVE_SYS_PARAM_H
+ #include <sys/param.h>
+ #endif

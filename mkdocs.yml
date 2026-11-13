@@ -1,0 +1,138 @@
+# VCAI HTML Documentation Manual
+# Build: ./docs/build_manual.sh  (or: mkdocs build)
+# Output: manual/
+# Do not use "mkdocs serve": links to repo files (config, source) require
+# viewing the built manual via file:// from the repo root.
+#
+# Theme: readthedocs (built-in). Replaces Material to avoid drawer/scrollwrap
+# issues with large nav; sidebar is a normal scrolling column.
+
+site_name: VCAI Manual
+site_description: Book-like HTML documentation for Video Coding for AI Tasks (VCAI)
+site_author: VCAI contributors
+
+site_dir: manual
+docs_dir: docs
+use_directory_urls: false
+
+# Disable search plugin: client-side search does not work when viewing via file://
+# (browser blocks loading search index). Manual is intended for file:// from repo root.
+plugins: []
+
+# Widen main content (RTD default max-width 800px is too narrow for tables)
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/mermaid@11.5.0/dist/mermaid.min.js
+  - javascripts/mermaid-init.js
+
+theme:
+  name: readthedocs
+  highlightjs: true
+
+markdown_extensions:
+  - pymdownx.snippets:
+      base_path:
+        - .
+      check_paths: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_div_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+  - admonition
+  - pymdownx.details
+
+nav:
+  - Home: index.md
+
+  - Part I — Foundation:
+      - "1. Introduction": part01/ch01-introduction.md
+      - "2. System requirements": part01/ch02-system-requirements.md
+      - "3. Glossary": part01/ch03-glossary.md
+      - "Troubleshooting and FAQ": part01/ch04-troubleshooting-faq.md
+      - "5. Architecture atlas": part01/ch05-architecture-atlas.md
+
+  - Part II — Build and stack:
+      - "Initial setup overview": part02/initial-setup-overview.md
+      - "4. CMake and subprojects": part02/ch04-cmake.md
+      - "5. Local install — system packages": part02/ch05-system-packages.md
+      - "6. GStreamer workflow": part02/ch06-gstreamer-source-workflow.md
+      - "7. Patches and third-party": part02/ch07-patches.md
+      - "8. Static analysis and workflow": part02/ch08-static-analysis.md
+
+  - Part III — encoder_cli:
+      - "9. Encoder overview": part03/ch09-encoder-overview.md
+      - "10. Build, run, config": part03/ch10-build-run-config.md
+      - "11. CLI reference": part03/ch11-cli-reference.md
+      - "12. Scripts and YOLO": part03/ch12-scripts-yolo.md
+      - "13. Pipeline architecture": part03/ch13-pipeline-architecture.md
+      - "Encoder dataflow (end-to-end)": part03/encoder-end-to-end-dataflow.md
+      - "PRI and EOI SEI messages": part03/pri-sei-lifecycle.md
+      - "Installing ONNX Runtime": part03/install-onnx-runtime.md
+      - "14. Encoder architecture deep dive": part03/ch14-encoder-architecture-deep-dive.md
+      - "Threading and plugin-migration notes": part03/encoder-cli-threading-and-migration.md
+      - "15. ROI packing modes": part03/ch15-roi-packing-modes.md
+      - "16. Background modes and QP map": part03/ch16-background-modes-and-qp-map.md
+      - Config reference (encoder_config.ini):
+          - "encoder_config overview": config/encoder_config-overview.md
+          - "Video / Camera / UDP": config/encoder_config-video-udp.md
+          - "ROI": config/encoder_config-roi.md
+          - "Tracker / Performance": config/encoder_config-tracker-performance.md
+          - "Detection / Stabilization": config/encoder_config-detection-stabilization.md
+          - "Debug / Logging": config/encoder_config-debug-logging.md
+          - "Communication / WebRTC": config/encoder_config-communication-webrtc.md
+
+  - Part IV — rtp_server:
+      - "14. Receiver overview": part04/ch14-receiver-overview.md
+      - "15. Build, config, run": part04/ch15-build-config-run.md
+      - "16. Test mode and evaluation": part04/ch16-test-mode.md
+      - "17. Architecture": part04/ch17-architecture.md
+      - "18. rtp_server modes in detail": part04/ch18-rtp-server-modes.md
+      - "19. rtp_server scripts": part04/ch19-scripts.md
+      - Config reference (rtp_server_config.ini):
+          - "rtp_server_config overview": config/rtp_server_config-overview.md
+          - "WebRTC / Monitoring": config/rtp_server_config-webrtc-monitoring.md
+          - "RTPOutput / Debug": config/rtp_server_config-rtpoutput-debug.md
+          - "TET and rest": config/rtp_server_config-tet-rest.md
+
+  - Part V — libvcai:
+      - "19. Library role and build": part05/ch19-lib-overview.md
+      - "20. API areas": part05/ch20-api-areas.md
+      - "21. Debug categories": part05/ch21-debug-categories.md
+      - "Source map (cmake)": part05/ch22-source-map.md
+      - "23. Build and runtime dependencies": part05/ch23-dependencies-build-graph.md
+
+  - Part VI — Testing:
+      - "22. Test suite layout": part06/ch22-test-layout.md
+      - "23. Build and run tests": part06/ch23-build-run-tests.md
+
+  - Part VII — Scripts and evaluation:
+      - "24. Scripts index": part07/ch24-scripts-index.md
+      - "Scripts README Part 1": part07/scripts-readme-part1.md
+      - "Scripts README Part 2": part07/scripts-readme-part2.md
+      - "Scripts README Part 3": part07/scripts-readme-part3.md
+      - "Scripts README Part 4": part07/scripts-readme-part4.md
+      - "scripts/setup README": part07/scripts-setup-readme.md
+      - "25. TET comparison framework": part07/ch25-tet-framework.md
+
+  - Part VIII — Containers:
+      - "26. Docker": part08/ch26-docker.md
+      - "27. Apptainer": part08/ch27-apptainer.md
+
+  - Part IX — Feature options:
+      - "28. Feature options matrix": part09/ch28-feature-options.md
+
+  - Part X — Appendices:
+      - "A. Generated directories": appendix/a-generated-dirs.md
+      - "Design decisions (whys)": appendix/design-decisions.md
+      - "C. Encoder CLI quick index": appendix/c-encoder-cli-index.md
+      - "D. rtp_server CLI quick index": appendix/d-rtp-server-index.md
+      - "E1. Patch file inventory": appendix/e-patch-inventory.md
+      - "E2. Scripts file inventory": appendix/e-scripts-inventory.md

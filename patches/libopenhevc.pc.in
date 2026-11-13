@@ -1,0 +1,13 @@
+# OpenHEVC does not install a pkg-config file; gst-openhevc needs libopenhevc.
+# Installed library is libLibOpenHevcWrapper.so → -lLibOpenHevcWrapper
+# Replace @PREFIX@ with install prefix (e.g. /usr or /path/to/lib/install).
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: libopenhevc
+Description: OpenHEVC HEVC decoder library (LibOpenHevcWrapper)
+Version: 1.0
+Libs: -L${libdir} -lLibOpenHevcWrapper
+Cflags: -I${includedir}

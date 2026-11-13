@@ -1,0 +1,144 @@
+# Development Dockerfile for VCAI
+# Base image: NVIDIA DeepStream with Triton development tools
+FROM nvcr.io/nvidia/deepstream:7.1-gc-triton-devel
+
+RUN apt-get update
+
+# Fix broken packages from the base image
+RUN apt-get install --reinstall -y libde265-0 \
+    autoconf \
+    automake \
+    autotools-dev \
+    bison \
+    build-essential \
+    cmake \
+    flex \
+    gobject-introspection \
+    gnutls-bin \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-tools \
+    libasound2-dev \
+    libavcodec58 \
+    libavutil56 \
+    libbluetooth-dev \
+    libcdparanoia-dev \
+    libfaad2 \
+    libffi-dev \
+    libflac8 \
+    libgirepository1.0-dev \
+    libgmp-dev \
+    libgraphene-1.0-dev \
+    libjack-jackd2-dev \
+    libjansson4 \
+    libmjpegutils-2.1-0 \
+    libmp3lame0 \
+    libmpeg2-4 \
+    libmpeg2encpp-2.1-0 \
+    libmpg123-0 \
+    libmpg123-dev \
+    libmfx-dev \
+    libopencv-dev \
+    libopenh264-6 \
+    libopenh264-dev \
+    libpng-dev \
+    libpng16-16 \
+    libpulse-dev \
+    libsoup2.4-dev \
+    libtheora-dev \
+    libtiff-dev \
+    libtool \
+    libva-dev \
+    libvisual-0.4-dev \
+    libvo-aacenc0 \
+    libvorbis-dev \
+    libvpx7 \
+    libwpewebkit-1.0-dev \
+    libx11-6 \
+    libx264-163 \
+    libx265-199 \
+    libxvidcore4 \
+    libxv-dev \
+    libxml2-utils \
+    libzbar-dev \
+    locales \
+    make \
+    ninja-build \
+    pkg-config \
+    python3 \
+    python3-pip \
+    util-linux \
+    uuid-dev \
+    wget
+
+# Install CUDA toolkit
+RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-ubuntu2204.pin
+RUN mv cuda-ubuntu2204.pin /etc/apt/preferences.d/cuda-repository-pin-600
+RUN wget https://developer.download.nvidia.com/compute/cuda/13.0.2/local_installers/cuda-repo-ubuntu2204-13-0-local_13.0.2-580.95.05-1_amd64.deb
+RUN dpkg -i cuda-repo-ubuntu2204-13-0-local_13.0.2-580.95.05-1_amd64.deb
+RUN cp /var/cuda-repo-ubuntu2204-13-0-local/cuda-*-keyring.gpg /usr/share/keyrings/
+RUN apt-get update
+RUN apt-get -y install cuda-toolkit-13-0
+
+# Install TensorRT 10.13.3.9 to match host system version
+# This ensures engine files built on host are compatible with Docker container
+# Note: DeepStream image may have newer TensorRT, so we need to downgrade
+# First, unhold any held packages and remove conflicting versions if needed
+RUN apt-mark unhold libnvinfer* libnvonnx* python3-libnvinfer 2>/dev/null || true && \
+    apt-get install -y --allow-downgrades --allow-change-held-packages --no-install-recommends \
+    libnvonnxparsers10=10.13.3.9-1+cuda13.0 \
+    libnvinfer-vc-plugin10=10.13.3.9-1+cuda13.0 \
+    libnvinfer10=10.13.3.9-1+cuda13.0 \
+    libnvinfer-plugin10=10.13.3.9-1+cuda13.0 \
+    libnvinfer-dev=10.13.3.9-1+cuda13.0 \
+    libnvinfer-plugin-dev=10.13.3.9-1+cuda13.0 \
+    libnvinfer-headers-dev=10.13.3.9-1+cuda13.0 \
+    libnvinfer-headers-plugin-dev=10.13.3.9-1+cuda13.0 \
+    libnvonnxparsers-dev=10.13.3.9-1+cuda13.0 \
+    python3-libnvinfer=10.13.3.9-1+cuda13.0 \
+    && apt-mark hold libnvinfer10 libnvinfer-plugin10 libnvinfer-vc-plugin10 libnvonnxparsers10 \
+       libnvinfer-dev libnvinfer-plugin-dev libnvinfer-headers-dev libnvinfer-headers-plugin-dev \
+       libnvonnxparsers-dev python3-libnvinfer
+
+# Install build dependencies and system packages
+RUN apt-get install -y --no-install-recommends \
+    ffmpeg \
+    g++-12 \
+    gcc-12 \
+    gobject-introspection \
+    gstreamer1.0-gl \
+    gstreamer1.0-gtk3 \
+    gstreamer1.0-libav \
+    gstreamer1.0-plugins-base-apps \
+    gtkmm-3.0-dev \
+    libavcodec-dev \
+    libavdevice58 \
+    libavfilter-dev \
+    libavfilter7 \
+    libavformat-dev \
+    libavformat58 \
+    libavutil-dev \
+    libde265-dev \
+    libgirepository1.0-dev \
+    libgtkmm-3.0-1v5 \
+    libgtkmm-3.0-dev \
+    libheif-dev \
+    libheif1 \
+    libnvfatbin-12-6 \
+    libnvfatbin-12-9 \
+    libnvfatbin-dev-12-6 \
+    libnvfatbin-dev-12-9 \
+    libnvjitlink-12-9 \
+    libnvjitlink-dev-12-9 \
+    libnvjpeg-12-9 \
+    libnvjpeg-dev-12-9 \
+    libx265-dev \
+    libxml2-utils \
+    yasm
+
+# Install newer Meson version via pip
+RUN pip3 install meson
+
+RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100

@@ -1,0 +1,16 @@
+OpenHEVC: build libavutil/aarch64/cpu.c on aarch64 so ff_get_cpu_flags_aarch64 is defined.
+Apply after openhevc_aarch64_cmake.patch. Requires libavutil/aarch64/cpu.c (created by install_openhevc.sh on aarch64).
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -378,3 +378,8 @@
+  libavcodec/arm/videodsp_init_arm.c
+ )
+ else()
++elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64")
++list(APPEND libfilenames
++ libavutil/aarch64/cpu.c
++)
++else()
+ list(APPEND libfilenames
+  libavutil/x86/cpu.c
+  libavutil/x86/imgutils_init.c

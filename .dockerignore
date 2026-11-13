@@ -1,0 +1,27 @@
+# Ignore build directories
+build/
+lib/
+
+# Ignore temporary files
+*.tmp
+*.log
+
+# Ignore git files
+.git/
+.gitignore
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore test outputs
+
+# Ignore virtual environment
+.env/
+
+# Keep patches directory for the build
+!patches/
+
+tet_test_results_*

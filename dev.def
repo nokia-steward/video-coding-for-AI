@@ -1,0 +1,203 @@
+Bootstrap: docker
+From: nvcr.io/nvidia/deepstream:7.1-gc-triton-devel
+
+%files
+    ./scripts /opt/sf_dev/scripts
+    ./patches /opt/sf_dev/patches
+
+%post
+    # Fail the build if any command fails
+    set -e
+
+    # Set build-time variables
+    TENSORRT_VERSION="10.3.0.26-1+cuda12.5"
+
+    apt-get update
+
+    # Fix broken packages from the base image
+    apt-get install --reinstall -y libde265-0 \
+        autoconf \
+        automake \
+        autotools-dev \
+        bison \
+        build-essential \
+        cmake \
+        flex \
+        gobject-introspection \
+        gnutls-bin \
+        gstreamer1.0-plugins-bad \
+        gstreamer1.0-plugins-good \
+        gstreamer1.0-plugins-ugly \
+        gstreamer1.0-tools \
+        libasound2-dev \
+        libavcodec58 \
+        libavutil56 \
+        libbluetooth-dev \
+        libcdparanoia-dev \
+        libfaad2 \
+        libffi-dev \
+        libflac8 \
+        libgirepository1.0-dev \
+        libgmp-dev \
+        libgraphene-1.0-dev \
+        libjack-jackd2-dev \
+        libjansson4 \
+        libmjpegutils-2.1-0 \
+        libmp3lame0 \
+        libmpeg2-4 \
+        libmpeg2encpp-2.1-0 \
+        libmpg123-0 \
+        libmpg123-dev \
+        libmfx-dev \
+        libopencv-dev \
+        libopenh264-6 \
+        libopenh264-dev \
+        libpng-dev \
+        libpng16-16 \
+        libpulse-dev \
+        libsoup2.4-dev \
+        libtheora-dev \
+        libtiff-dev \
+        libtool \
+        libva-dev \
+        libvisual-0.4-dev \
+        libvo-aacenc0 \
+        libvorbis-dev \
+        libvpx7 \
+        libwpewebkit-1.0-dev \
+        libx11-6 \
+        libx264-163 \
+        libx265-199 \
+        libxvidcore4 \
+        libxv-dev \
+        libxml2-utils \
+        libzbar-dev \
+        locales \
+        make \
+        ninja-build \
+        pkg-config \
+        python3 \
+        python3-pip \
+        python3-venv \
+        util-linux \
+        uuid-dev \
+        wget
+
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        ffmpeg \
+        g++-12 \
+        gcc-12 \
+        gobject-introspection \
+        gstreamer1.0-gl \
+        gstreamer1.0-gtk3 \
+        gstreamer1.0-libav \
+        gstreamer1.0-plugins-base-apps \
+        gtkmm-3.0-dev \
+        libavcodec-dev \
+        libavdevice58 \
+        libavfilter-dev \
+        libavfilter7 \
+        libavformat-dev \
+        libavformat58 \
+        libavutil-dev \
+        libde265-dev \
+        libgirepository1.0-dev \
+        libgtkmm-3.0-1v5 \
+        libgtkmm-3.0-dev \
+        libheif-dev \
+        libheif1 \
+        libnvfatbin-12-6 \
+        libnvfatbin-12-9 \
+        libnvfatbin-dev-12-6 \
+        libnvfatbin-dev-12-9 \
+        libnvjitlink-12-9 \
+        libnvjitlink-dev-12-9 \
+        libnvjpeg-12-9 \
+        libnvjpeg-dev-12-9 \
+        libx265-dev \
+        libxml2-utils \
+        yasm
+
+    # Install meson system-wide so it's accessible to all users
+    # First try apt (if available), otherwise install via pip
+    if apt-cache show meson >/dev/null 2>&1; then
+        apt-get install -y meson
+    else
+        # Install meson via pip - try system-wide first, then user install
+        # Use --user flag to install to user site-packages, which is more reliable
+        python3 -m pip install --user meson || python3 -m pip install --break-system-packages meson || python3 -m pip install meson
+        # Ensure the user's local bin is in PATH (already set in %environment, but ensure it's there)
+        # Create a symlink to /usr/local/bin if meson is in ~/.local/bin
+        if [ -f "/root/.local/bin/meson" ] && [ ! -f "/usr/local/bin/meson" ]; then
+            mkdir -p /usr/local/bin
+            ln -sf /root/.local/bin/meson /usr/local/bin/meson || cp /root/.local/bin/meson /usr/local/bin/meson
+        fi
+    fi
+    # Verify meson installation
+    if ! command -v meson >/dev/null 2>&1; then
+        echo "ERROR: meson command not found after installation"
+        exit 1
+    fi
+    # Test meson actually works (not just that the command exists)
+    if ! meson --version >/dev/null 2>&1; then
+        echo "ERROR: meson --version failed - meson installation is broken"
+        echo "Attempting to fix by ensuring PYTHONPATH includes user site-packages..."
+        # Try to find where meson was installed
+        PYTHON_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+        export PYTHONPATH="${PYTHONPATH}:/root/.local/lib/python${PYTHON_VERSION}/site-packages"
+        if ! meson --version >/dev/null 2>&1; then
+            echo "ERROR: meson still not working after PYTHONPATH fix"
+            exit 1
+        fi
+    fi
+    echo "Meson installed successfully: $(meson --version)"
+
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
+
+    # Project root in image: %files copy ./scripts and ./patches into /opt/sf_dev
+    export PROJECT_ROOT=/opt/sf_dev
+    export TEMP_DIR=/opt/sf_dev/temp
+    export PATCHES_DIR=/opt/sf_dev/patches
+
+    echo "Running install_kvazaar.sh script..."
+    echo "PROJECT_ROOT: $PROJECT_ROOT"
+    echo "TEMP_DIR: $TEMP_DIR"
+    echo "PATCHES_DIR: $PATCHES_DIR"
+
+    # Run from /opt/sf_dev so patches/ and scripts/ layout matches repo
+    cd /opt/sf_dev
+    ./scripts/setup/bin/install_kvazaar.sh
+
+    echo "Running install_openhevc.sh script..."
+    ./scripts/setup/bin/install_openhevc.sh || echo "WARNING: install_openhevc.sh failed; openhevcdec may be unavailable"
+
+    # Install CUDA toolkit
+    wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-ubuntu2204.pin
+    mv cuda-ubuntu2204.pin /etc/apt/preferences.d/cuda-repository-pin-600
+    wget https://developer.download.nvidia.com/compute/cuda/13.0.2/local_installers/cuda-repo-ubuntu2204-13-0-local_13.0.2-580.95.05-1_amd64.deb
+    dpkg -i cuda-repo-ubuntu2204-13-0-local_13.0.2-580.95.05-1_amd64.deb
+    cp /var/cuda-repo-ubuntu2204-13-0-local/cuda-*-keyring.gpg /usr/share/keyrings/
+    apt-get update
+    apt-get -y install cuda-toolkit-13-0
+
+    # Cleanup temporary build tree (script also rm -rf temp after install)
+    echo "Cleaning up temporary files..."
+    rm -rf /opt/sf_dev/temp
+
+%environment
+    # Set runtime environment variables
+    export NVIDIA_DRIVER_CAPABILITIES="${NVIDIA_DRIVER_CAPABILITIES},video,compute,graphics,utility"
+    export PATH="${PATH}:${HOME}/.local/bin:/root/.local/bin"
+    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HOME}/.local/lib:/usr/local/cuda-13.0/bin"
+    export PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:${HOME}/.local/lib/pkgconfig"
+    # Add common Python site-packages locations to PYTHONPATH for meson
+    # This covers both root and user installations
+    export PYTHONPATH="${PYTHONPATH}:/root/.local/lib/python3.10/site-packages:/root/.local/lib/python3.11/site-packages:/root/.local/lib/python3.12/site-packages"
+    # Use Python to dynamically add user's site-packages if different from root
+    export PYTHONPATH="${PYTHONPATH}:$(python3 -c "import site; print(':'.join(site.getsitepackages() + [site.getusersitepackages()]))" 2>/dev/null || echo '')"
+
+    # DeepStream environment
+    export DEEPSTREAM_PATH="/opt/nvidia/deepstream/deepstream-7.1"
+    export GST_PLUGIN_PATH="${DEEPSTREAM_PATH}/lib/gstreamer-1.0:${GST_PLUGIN_PATH}"
+    export LD_LIBRARY_PATH="${DEEPSTREAM_PATH}/lib:/usr/local/cuda-13.0/lib64:${LD_LIBRARY_PATH}"

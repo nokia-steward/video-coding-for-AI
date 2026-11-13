@@ -1,0 +1,30 @@
+CompileFlags:
+  Add: 
+    - -std=c++20
+    - -Wall
+    - -Wextra
+    - -Wpedantic
+  Remove: 
+    - -Werror  # Remove -Werror for better IDE experience (warnings won't block compilation)
+
+Index:
+  Background: Build
+
+InlayHints:
+  Enabled: Yes
+  ParameterNames: Yes
+  DeducedTypes: Yes
+
+Hover:
+  ShowAKA: Yes
+
+Diagnostics:
+  ClangTidy:
+    Add: 
+      - readability-*
+      - performance-*
+      - modernize-*
+    Remove:
+      - readability-magic-numbers
+      - readability-identifier-length
+  UnusedIncludes: Strict
